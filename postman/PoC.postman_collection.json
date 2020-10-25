@@ -1,0 +1,132 @@
+{
+	"info": {
+		"_postman_id": "637aa422-b030-4818-8546-41ea4cf4aaf4",
+		"name": "PoC",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Lambda example",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"get\": true,\r\n  \"key\": \"Product:1\"\r\n}"
+				},
+				"url": {
+					"raw": "http://localhost:9021/2015-03-31/functions/index/invocations",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "9021",
+					"path": [
+						"2015-03-31",
+						"functions",
+						"index",
+						"invocations"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Register consumer",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/vnd.kafka.v2+json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"name\": \"my_consumer_instance\", \"format\": \"json\", \"auto.offset.reset\": \"earliest\"}"
+				},
+				"url": {
+					"raw": "http://localhost:8082/consumers/my_json_consumer",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8082",
+					"path": [
+						"consumers",
+						"my_json_consumer"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Subscribe",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/vnd.kafka.v2+json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"name\": \"my_consumer_instance\", \"format\": \"json\", \"auto.offset.reset\": \"earliest\"}"
+				},
+				"url": {
+					"raw": "http://localhost:8082/consumers/my_json_consumer",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8082",
+					"path": [
+						"consumers",
+						"my_json_consumer"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get messages",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/vnd.kafka.v2+json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"name\": \"my_consumer_instance\", \"format\": \"json\", \"auto.offset.reset\": \"earliest\"}"
+				},
+				"url": {
+					"raw": "http://localhost:8082/consumers/my_json_consumer1/instances/my_consumer_instance1/records",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8082",
+					"path": [
+						"consumers",
+						"my_json_consumer1",
+						"instances",
+						"my_consumer_instance1",
+						"records"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"protocolProfileBehavior": {}
+}

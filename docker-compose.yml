@@ -1,0 +1,129 @@
+version: "3.5"
+
+services:
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:5.1.0
+    container_name: zookeeper
+    restart: unless-stopped
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      TZ: "${TZ-Europe/London}"
+    healthcheck:
+      test: "echo stat | nc localhost $$ZOOKEEPER_CLIENT_PORT"
+      start_period: 30s
+    networks:
+      - kafka-poc-network
+
+  kafka:
+    image: confluentinc/cp-kafka:5.1.0
+    container_name: kafka
+    restart: unless-stopped
+    depends_on:
+      - zookeeper
+    ports:
+      - "29092:29092"
+      - "9092:9092"
+    environment:
+      KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
+      ## Each listener need to have different port
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,PLAINTEXT_HOST://0.0.0.0:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "1"
+      KAFKA_DELETE_TOPIC_ENABLE: "true"
+      TZ: "${TZ-Europe/London}"
+    healthcheck:
+      test: [ "CMD", "nc", "-z", "localhost", "9092" ]
+      start_period: 30s
+    networks:
+      - kafka-poc-network
+
+  kafka-rest-proxy:
+    image: confluentinc/cp-kafka-rest:5.1.0
+    container_name: kafka-rest-proxy
+    restart: unless-stopped
+    depends_on:
+      - zookeeper
+      - kafka
+    expose:
+      - "8082"
+    ports:
+      - "8082:8082"
+    environment:
+      KAFKA_REST_BOOTSTRAP_SERVERS: "PLAINTEXT://kafka:9092"
+      KAFKA_REST_ZOOKEEPER_CONNECT: "zookeeper:2181"
+      KAFKA_REST_HOST_NAME: "kafka-rest-proxy"
+      KAFKA_REST_LISTENERS: "http://0.0.0.0:8082"
+      KAFKA_REST_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
+      KAFKA_REST_CONSUMER_REQUEST_TIMEOUT_MS: 30000
+      TZ: "${TZ-Europe/London}"
+    healthcheck:
+      test: "curl -f http://localhost:8082 || exit 1"
+      start_period: 30s
+    networks:
+      - kafka-poc-network
+
+  kafka-topics-ui:
+    image: landoop/kafka-topics-ui:0.9.4
+    container_name: kafka-topics-ui
+    restart: unless-stopped
+    depends_on:
+      - kafka-rest-proxy
+    ports:
+      - "8085:8000"
+    environment:
+      KAFKA_REST_PROXY_URL: "http://kafka-rest-proxy:8082"
+      PROXY: "true"
+    healthcheck:
+      test: "wget --quiet --tries=1 --spider http://localhost:8000 || exit 1"
+      start_period: 30s
+    networks:
+      - kafka-poc-network
+
+  redis:
+    image: "bitnami/redis:5.0"
+    container_name: redis
+    environment:
+      # ALLOW_EMPTY_PASSWORD is recommended only for development.
+      - ALLOW_EMPTY_PASSWORD=yes
+      - REDIS_DISABLE_COMMANDS=FLUSHDB
+    ports:
+      - "6379:6379"
+      # volumes:
+      # - 'redis_data:/bitnami/redis/data'
+    networks:
+      - kafka-poc-network
+
+###  custom images
+
+# Image with our lambda
+  lambda:
+    image: "mylambda"
+    container_name:  mylambda
+    build:
+      context: ./lambda
+    restart: "no"
+    depends_on:
+      - redis
+    environment:
+      AWS_ACCESS_KEY_ID: "mylambda"
+      AWS_SECRET_ACCESS_KEY: "mylambda"
+      REDIS_HOST: "redis"
+      DOCKER_LAMBDA_WATCH: 1
+      DOCKER_LAMBDA_STAY_OPEN: 1
+    ports:
+      - 9001:9001
+    networks:
+      - kafka-poc-network
+    # References the foo handler defined above:
+    command: index.handler
+
+
+volumes:
+  redis_data:
+    driver: local
+
+networks:
+  kafka-poc-network:
+    name: kafka-poc-network

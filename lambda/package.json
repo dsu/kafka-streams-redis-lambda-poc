@@ -1,0 +1,12 @@
+{
+  "name": "docker-run",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "docker run --rm -v %cd%:/var/task lambci/lambda:nodejs8.10 index.handler '{\"get\": true, \"key\": 1}'"
+  },
+  "dependencies": {
+    "kafka-rest": "^0.0.5",
+    "redis": "^3.0.2"
+  }
+}
